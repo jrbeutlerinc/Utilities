@@ -1,30 +1,18 @@
-#!/usr/bin/env ruby
+#!/bin/sh
+#
+# git prepare-commit-msg hook for automatically prepending an issue key
+# from the start of the current branch name to commit messages.
 
-# borrowed from http://glxn.net/2014/01/05/git-commit-message-hook-for-jira-issue-tags/
-message_file = ARGV[0]
-message = File.read(message_file)
-
-$regex_jira = /^(?!#)(.*?)([A-Z0-9]+-\d+)/
-
-# Remove the following if you want this hook to work on all repos.
-# This currently will only apply this hook if the current path of the repo has edusource in it.
-# This allows some repos that aren't hooked up to Jira to still be checked in without Jira tags (if it's in a different directory)
-$regex_edusource = /^(.*?)([Ee][Dd][Uu][Ss][Oo][Uu][Rr][Cc][Ee])/
-current_directory = Dir.pwd
-if !$regex_edusource.match(current_directory)
-	exit 0
-end
-# Remove the above if you want this hook to work on all repos.
-
-if !$regex_jira.match(message)
-  head = File.read("./.git/HEAD")
-  branch = $regex_jira.match(head)
-  tag_exists = $regex_jira.match(message)
-  if (branch && branch.length == 3 && !tag_exists)
-    File.open(message_file, "w") {|f| f.write(branch[2] + ": " + message) }
-    exit 0
-  end
-
-  puts "[ERROR] Your message is missing a JIRA issue key (i.e.: JIRA-25). Try again with a different commit message"
-  exit 1
-end
+# check if commit is merge commit or a commit ammend
+if [[ $2 == "merge" ]] || [[ $2 == "commit" ]]; then
+    exit
+fi
+ISSUE_KEY=`git branch | grep -o "\* \(.*/\)*[A-Z]\{2,\}-[0-9]\+" | grep -o "[A-Z]\{2,\}-[0-9]\+"`
+if [ $? -ne 0 ]; then
+    # no issue key in branch, use the default message
+    ISSUE_KEY="UNK-0000"
+fi
+# issue key matched from branch prefix, prepend to commit message
+TEMP=`mktemp /tmp/commitmsg-XXXXX`
+(echo "$ISSUE_KEY: $(cat  $1)") > $TEMP
+cat $TEMP > $1
