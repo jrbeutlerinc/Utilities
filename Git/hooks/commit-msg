@@ -7,7 +7,7 @@
 if [[ $2 == "merge" ]] || [[ $2 == "commit" ]]; then
     exit
 fi
-ISSUE_KEY=`git branch | grep -o "\* \(.*/\)*[A-Z0-9]\{2,\}-[0-9]\+" | grep -o "[A-Z0-9]\{2,\}-[0-9]\+"`
+ISSUE_KEY=`git branch | grep -o "\* \(.*/\)*[A-Z0-9]\{2,\}-[0-9]\+" | grep -o "[A-Z0-9]\{2,\}-[0-9]\+"` | tr [:lower:] [:upper:]
 if [ $? -ne 0 ]; then
     # no issue key in branch, use the default message
     ISSUE_KEY="UNK-0000"
